@@ -1,7 +1,8 @@
+import numpy
 import psycopg2
 from tkinter import *
 from tkinter import messagebox
-
+from  tkinter import ttk
 
 bd=psycopg2.connect(
     database="AvtoRemontBase",
@@ -9,9 +10,57 @@ bd=psycopg2.connect(
     password="1223",
 )
 
+
+def otchrab():
+    cur = bd.cursor()
+    cur.execute("SELECT * from rabotniki")
+    rows = cur.fetchall()
+    vis, dl = numpy.shape(rows)
+    ws = Tk()
+    ws.title('Информация о сотрудниках')
+    ws.geometry('810x500')
+
+    otchet_frame = Frame(ws)
+    otchet_frame.pack()
+
+    my_otchet = ttk.Treeview(otchet_frame)
+
+    my_otchet['columns'] = ('fio', 'post', 'login', 'pass', 'phone','address','birthdate')
+
+    my_otchet.column("#0", width=0,  stretch=NO)
+    my_otchet.column("fio",anchor=CENTER, width=170)
+    my_otchet.column("post",anchor=CENTER,width=140)
+    my_otchet.column("login",anchor=CENTER,width=80)
+    my_otchet.column("pass",anchor=CENTER,width=80)
+    my_otchet.column("phone",anchor=CENTER,width=100)
+    my_otchet.column("address",anchor=CENTER,width=120)
+    my_otchet.column("birthdate",anchor=CENTER,width=120)
+
+    my_otchet.heading("#0",text="",anchor=CENTER)
+    my_otchet.heading("fio",text="ФИО",anchor=CENTER)
+    my_otchet.heading("post",text="Должность",anchor=CENTER)
+    my_otchet.heading("login",text="Логин",anchor=CENTER)
+    my_otchet.heading("pass",text="Пароль",anchor=CENTER)
+    my_otchet.heading("phone",text="Номер телефона",anchor=CENTER)
+    my_otchet.heading("address",text="Домашний адрес",anchor=CENTER)
+    my_otchet.heading("birthdate",text="Дата рождения",anchor=CENTER)
+
+    for i in range (vis):
+        my_otchet.insert(parent='',index='end',text='',
+        values=(rows[i][0],rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6]))
+
+    my_otchet.pack()
+
+    ws.mainloop()
+
 def dirokno(fio):
     print("имя директора: ", fio)
-
+    windir=Tk()
+    windir.geometry('500x300')
+    title='Добро пожаловать, '+fio
+    windir.title(title)
+    otchpers=Button(windir,text="Информация о сотрудниках",command=lambda: otchrab())
+    otchpers.grid(row=1,column=1)
 def mehokno(fio):
     print("имя механика: ", fio)
 
@@ -72,6 +121,6 @@ rows=cur.fetchall()
 vhod()
 
 
-
+cur.close()
 bd.close()
 
