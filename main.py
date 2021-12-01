@@ -10,19 +10,24 @@ bd=psycopg2.connect(
     password="1223",
 )
 
-def dobavrab2(fio, dolz, login, pas, phone, addr, birth):
+def dobavrab2(fio, dolz, logiin, pas, phone, addr, birth):
     if len(fio) != 0:
         if len(dolz) != 0:
-            if len(login) != 0:
+            if len(logiin) != 0:
                 if len(pas) != 0:
                     if len(birth) != 0:
                         if 2021-int(birth[:4])>=18:
                             cur = bd.cursor()
                             cur.execute("SELECT login FROM rabotniki")
                             provlog=cur.fetchall()
-                            if login in provlog == False:
+                            a=False
+                            for i in range(len(provlog)):
+                                if logiin in str (provlog[i]):
+                                    a=True
 
-                                strok=(fio, dolz, login, pas, phone, addr, birth)
+                            if a == False:
+
+                                strok=(fio, dolz, logiin, pas, phone, addr, birth)
                                 cur.execute(f"INSERT INTO rabotniki (fio,post,login,pass,phone,address,birthdate) VALUES {strok}")
                                 bd.commit()
                                 messagebox.showinfo("Успех", "Запись успешно добавлена!")
@@ -233,11 +238,11 @@ def dirokno(fio):
     windir.geometry('500x300')
     title = 'Добро пожаловать, '+fio
     windir.title(title)
-    otchpers = Button(windir,text="Информация о сотрудниках",command=lambda: otchrab())
+    otchpers = Button(windir,text="Информация о сотрудниках", width=25, command=lambda: otchrab())
     otchpers.grid(row=1,column=1)
-    dobpers = Button(windir, text="Добавить сотрудника", command=lambda: dobavrab())
+    dobpers = Button(windir, text="Добавить сотрудника", width=25, command=lambda: dobavrab())
     dobpers.grid(row=3, column=1)
-    otchhis = Button(windir, text="История работ", command=lambda: filhis())
+    otchhis = Button(windir, text="История работ", width=25, command=lambda: filhis())
     otchhis.grid(row=5, column=1)
 def mehokno(fio):
     print("имя механика: ", fio)
@@ -301,7 +306,7 @@ cur = bd.cursor()
 
 cur.execute("SELECT * from rabotniki")
 rows = cur.fetchall()
-dobavrab()
+
 vhod()
 
 
