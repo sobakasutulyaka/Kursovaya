@@ -10,6 +10,94 @@ bd=psycopg2.connect(
     password="1223",
 )
 
+def dobavrab2(fio, dolz, login, pas, phone, addr, birth):
+    if len(fio) != 0:
+        if len(dolz) != 0:
+            if len(login) != 0:
+                if len(pas) != 0:
+                    if len(birth) != 0:
+                        if 2021-int(birth[:4])>=18:
+                            cur = bd.cursor()
+                            cur.execute("SELECT login FROM rabotniki")
+                            provlog=cur.fetchall()
+                            if login in provlog == False:
+
+                                strok=(fio, dolz, login, pas, phone, addr, birth)
+                                cur.execute(f"INSERT INTO rabotniki (fio,post,login,pass,phone,address,birthdate) VALUES {strok}")
+                                bd.commit()
+                                messagebox.showinfo("Успех", "Запись успешно добавлена!")
+
+                            else:
+                                messagebox.showinfo("Ошибка", "Данный логин занят")
+                        else:
+                            messagebox.showinfo("ошибка", "Вы пытаетесь добавить несовершеннолетнего пользователя")
+                    else:
+                        messagebox.showinfo("ошибка", "Поле 'дата рождения' должно быть заполнено")
+                else:
+                    messagebox.showinfo("ошибка", "Поле 'пароль' должно быть заполнено")
+            else:
+                messagebox.showinfo("ошибка", "Поле 'логин' должно быть заполнено")
+        else:
+            messagebox.showinfo("ошибка", "Поле 'должность' должно быть заполнено")
+    else:
+        messagebox.showinfo("ошибка", "Поле 'ФИО' должно быть заполнено")
+
+
+def dobavrab():
+    dobrabwin=Tk()
+    dobrabwin.geometry('660x200')
+    dobrabwin.title("Добавление нового работника")
+    text11 = Label(dobrabwin, text="Введите ФИО:")
+    text11.grid(column=1, row=1)
+    fio = StringVar()
+    vvod11 = Entry(dobrabwin, relief=RAISED, width=25, borderwidth=2, textvariable=fio)  # ввод ФИО
+    vvod11.grid(column=1, row=2)
+
+    text12 = Label(dobrabwin, text="Введите должность:")
+    text12.grid(column=3, row=1)
+    vib = ["директор", "механик", "заведующий складом", "менеджер автопарка"]
+    dolz = ttk.Combobox(dobrabwin, values=vib)
+    dolz.set("должность")
+    dolz.grid(row=2, column=3)
+
+    text13 = Label(dobrabwin, text="Введите дату рождения (год-месяц-день):")
+    text13.grid(column=5, row=1)
+    birth = StringVar()
+    vvod13 = Entry(dobrabwin, relief=RAISED, width=15, borderwidth=2, textvariable=birth)  # ввод ФИО
+    vvod13.grid(column=5, row=2)
+
+    text21 = Label(dobrabwin, text="Введите логин:")
+    text21.grid(column=1, row=4)
+    login = StringVar()
+    vvod21 = Entry(dobrabwin, relief=RAISED, width=15, borderwidth=2, textvariable=login)  # ввод ФИО
+    vvod21.grid(column=1, row=5)
+
+    text22 = Label(dobrabwin, text="Введите телефон:")
+    text22.grid(column=3, row=4)
+    phone = StringVar()
+    vvod22 = Entry(dobrabwin, relief=RAISED, width=15, borderwidth=2, textvariable=phone)  # ввод ФИО
+    vvod22.grid(column=3, row=5)
+
+    text31 = Label(dobrabwin, text="Введите пароль:")
+    text31.grid(column=1, row=7)
+    pas = StringVar()
+    vvod31 = Entry(dobrabwin, relief=RAISED, width=15, borderwidth=2, textvariable=pas)  # ввод ФИО
+    vvod31.grid(column=1, row=8)
+
+    text32 = Label(dobrabwin, text="Введите адрес:")
+    text32.grid(column=3, row=7)
+    add = StringVar()
+    vvod32 = Entry(dobrabwin, relief=RAISED, width=15, borderwidth=2, textvariable=add)  # ввод ФИО
+    vvod32.grid(column=3, row=8)
+
+    dobav=Button(dobrabwin, text="Добавить", command=lambda: dobavrab2(fio.get(), dolz.get(), login.get(), pas.get(), phone.get(), add.get(), birth.get()))
+    dobav.grid(column=2, row=10)
+
+    zakr=Button(dobrabwin, text="Закрыть", command=lambda: dobrabwin.destroy())
+    zakr.grid(column=4,row=10)
+    dobrabwin.mainloop()
+
+
 def otchhis(filtr,vvod):
     cur = bd.cursor()
     if filtr == "госномер тс":
@@ -36,44 +124,50 @@ def otchhis(filtr,vvod):
         cur.execute("SELECT * from historyrem")
 
     rows = cur.fetchall()
-    print(rows)
-    vis, dl = numpy.shape(rows)
-    ws = Tk()
-    ws.title('История обслуживаний ТС')
-    ws.geometry('860x500')
+    if rows == []:
+        messagebox.showinfo("ошибка", "Записей с этим фильтром не обнаружено")
 
-    otchet_frame = Frame(ws)
-    otchet_frame.pack()
+    else:
 
-    my_otchet = ttk.Treeview(otchet_frame)
+        vis, dl = numpy.shape(rows)
+        ws = Tk()
+        ws.title('История обслуживаний ТС')
+        ws.geometry('940x500')
 
-    my_otchet['columns'] = ('model', 'gosnomer', 'prichina', 'detali', 'time', 'daterem', 'fiomehan')
+        otchet_frame = Frame(ws)
+        otchet_frame.pack()
 
-    my_otchet.column("#0", width=0, stretch=NO)
-    my_otchet.column("model", anchor=CENTER, width=90)
-    my_otchet.column("gosnomer", anchor=CENTER, width=80)
-    my_otchet.column("prichina", anchor=CENTER, width=180)
-    my_otchet.column("detali", anchor=CENTER, width=180)
-    my_otchet.column("time", anchor=CENTER, width=90)
-    my_otchet.column("daterem", anchor=CENTER, width=120)
-    my_otchet.column("fiomehan", anchor=CENTER, width=120)
+        my_otchet = ttk.Treeview(otchet_frame)
 
-    my_otchet.heading("#0", text="", anchor=CENTER)
-    my_otchet.heading("model", text="Модель", anchor=CENTER)
-    my_otchet.heading("gosnomer", text="Гос номер", anchor=CENTER)
-    my_otchet.heading("prichina", text="Причина", anchor=CENTER)
-    my_otchet.heading("detali", text="Необходимые детали", anchor=CENTER)
-    my_otchet.heading("time", text="Время обслуж", anchor=CENTER)
-    my_otchet.heading("daterem", text="Дата обслуживания", anchor=CENTER)
-    my_otchet.heading("fiomehan", text="ФИО мастера", anchor=CENTER)
+        my_otchet['columns'] = ('model', 'gosnomer', 'prichina', 'detali', 'time', 'daterem', 'fiomehan','zaverch')
 
-    for i in range(vis):
-        my_otchet.insert(parent='', index='end', text='',
-                         values=(rows[i][0], rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6]))
+        my_otchet.column("#0", width=0, stretch=NO)
+        my_otchet.column("model", anchor=CENTER, width=90)
+        my_otchet.column("gosnomer", anchor=CENTER, width=80)
+        my_otchet.column("prichina", anchor=CENTER, width=180)
+        my_otchet.column("detali", anchor=CENTER, width=180)
+        my_otchet.column("time", anchor=CENTER, width=90)
+        my_otchet.column("daterem", anchor=CENTER, width=120)
+        my_otchet.column("fiomehan", anchor=CENTER, width=120)
+        my_otchet.column("zaverch", anchor=CENTER, width=80)
 
-    my_otchet.pack()
+        my_otchet.heading("#0", text="", anchor=CENTER)
+        my_otchet.heading("model", text="Модель", anchor=CENTER)
+        my_otchet.heading("gosnomer", text="Гос номер", anchor=CENTER)
+        my_otchet.heading("prichina", text="Причина", anchor=CENTER)
+        my_otchet.heading("detali", text="Необходимые детали", anchor=CENTER)
+        my_otchet.heading("time", text="Время обслуж", anchor=CENTER)
+        my_otchet.heading("daterem", text="Дата обслуживания", anchor=CENTER)
+        my_otchet.heading("fiomehan", text="ФИО мастера", anchor=CENTER)
+        my_otchet.heading("zaverch", text="завершено?", anchor=CENTER)
 
-    ws.mainloop()
+        for i in range(vis):
+            my_otchet.insert(parent='', index='end', text='',
+                            values=(rows[i][0], rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6], rows[i][7]))
+
+        my_otchet.pack()
+
+        ws.mainloop()
 
 def otchrab():
     cur = bd.cursor()
@@ -141,6 +235,10 @@ def dirokno(fio):
     windir.title(title)
     otchpers = Button(windir,text="Информация о сотрудниках",command=lambda: otchrab())
     otchpers.grid(row=1,column=1)
+    dobpers = Button(windir, text="Добавить сотрудника", command=lambda: dobavrab())
+    dobpers.grid(row=3, column=1)
+    otchhis = Button(windir, text="История работ", command=lambda: filhis())
+    otchhis.grid(row=5, column=1)
 def mehokno(fio):
     print("имя механика: ", fio)
     winmeh = Tk()
@@ -196,14 +294,15 @@ def vhod(): #интерфейс меню входа
     vvodlog.grid(column=1, row=3)
     prov = Button(winvhod,text="Войти", command=lambda: out.append(avt(log.get(),pas.get()))) #кнопка входа, вызывает функцию проверки лог/пароль
     prov.grid(column=1, row=4)
-    knopkazakr = Button(winvhod, text="закрыть", command=winvhod.quit) #кнопка закрыть
+    knopkazakr = Button(winvhod, text="закрыть", command=lambda: winvhod.destroy()) #кнопка закрыть
     knopkazakr.grid(column=2, row=4)
     winvhod.mainloop()
 cur = bd.cursor()
 
 cur.execute("SELECT * from rabotniki")
 rows = cur.fetchall()
-filhis()
+dobavrab()
+vhod()
 
 
 cur.close()
