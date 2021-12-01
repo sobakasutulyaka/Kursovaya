@@ -10,6 +10,70 @@ bd=psycopg2.connect(
     password="1223",
 )
 
+def otchhis(filtr,vvod):
+    cur = bd.cursor()
+    if filtr == "госномер тс":
+        provfiltr = "SELECT * from historyrem where gosnomer = %s"
+        cur.execute(provfiltr, (vvod, ))
+
+    elif filtr == "модель":
+        provfiltr = "SELECT * from historyrem where model = %s"
+        cur.execute(provfiltr, (vvod,))
+
+    elif filtr == "причина":
+        provfiltr = "SELECT * from historyrem where prichina = %s"
+        cur.execute(provfiltr, (vvod,))
+
+    elif filtr == "дата":
+        provfiltr = "SELECT * from historyrem where daterem = %s"
+        cur.execute(provfiltr, (vvod,))
+
+    elif filtr == "ФИО механика":
+        provfiltr = "SELECT * from historyrem where fiomehan = %s"
+        cur.execute(provfiltr, (vvod,))
+
+    elif filtr == "нет":
+        cur.execute("SELECT * from historyrem")
+
+    rows = cur.fetchall()
+    print(rows)
+    vis, dl = numpy.shape(rows)
+    ws = Tk()
+    ws.title('История обслуживаний ТС')
+    ws.geometry('860x500')
+
+    otchet_frame = Frame(ws)
+    otchet_frame.pack()
+
+    my_otchet = ttk.Treeview(otchet_frame)
+
+    my_otchet['columns'] = ('model', 'gosnomer', 'prichina', 'detali', 'time', 'daterem', 'fiomehan')
+
+    my_otchet.column("#0", width=0, stretch=NO)
+    my_otchet.column("model", anchor=CENTER, width=90)
+    my_otchet.column("gosnomer", anchor=CENTER, width=80)
+    my_otchet.column("prichina", anchor=CENTER, width=180)
+    my_otchet.column("detali", anchor=CENTER, width=180)
+    my_otchet.column("time", anchor=CENTER, width=90)
+    my_otchet.column("daterem", anchor=CENTER, width=120)
+    my_otchet.column("fiomehan", anchor=CENTER, width=120)
+
+    my_otchet.heading("#0", text="", anchor=CENTER)
+    my_otchet.heading("model", text="Модель", anchor=CENTER)
+    my_otchet.heading("gosnomer", text="Гос номер", anchor=CENTER)
+    my_otchet.heading("prichina", text="Причина", anchor=CENTER)
+    my_otchet.heading("detali", text="Необходимые детали", anchor=CENTER)
+    my_otchet.heading("time", text="Время обслуж", anchor=CENTER)
+    my_otchet.heading("daterem", text="Дата обслуживания", anchor=CENTER)
+    my_otchet.heading("fiomehan", text="ФИО мастера", anchor=CENTER)
+
+    for i in range(vis):
+        my_otchet.insert(parent='', index='end', text='',
+                         values=(rows[i][0], rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6]))
+
+    my_otchet.pack()
+
+    ws.mainloop()
 
 def otchrab():
     cur = bd.cursor()
@@ -53,17 +117,38 @@ def otchrab():
 
     ws.mainloop()
 
+def filhis():
+    winfil = Tk()
+    winfil.geometry('500x300')
+    winfil.title("Отчёт о истории ремонтов")
+    fil=["госномер тс","модель","причина","дата","ФИО механика","нет"]
+    filtr=ttk.Combobox(winfil, values = fil)
+    filtr.set("Выберите фильтр")
+    filtr.grid(row=1, column=1)
+    vvodverh=Label(winfil,text="Введите значение фильтра")
+    vvodverh.grid(row=2,column=1)
+    vvodfiltr=Entry(winfil)
+    vvodfiltr.grid(row=3,column=1)
+    otchhiskn = Button(winfil,text="Открыть отчёт",command=lambda: otchhis(filtr.get(),vvodfiltr.get()))
+    otchhiskn.grid(row=5,column=1)
+
+    winfil.mainloop()
 def dirokno(fio):
     print("имя директора: ", fio)
-    windir=Tk()
+    windir = Tk()
     windir.geometry('500x300')
-    title='Добро пожаловать, '+fio
+    title = 'Добро пожаловать, '+fio
     windir.title(title)
-    otchpers=Button(windir,text="Информация о сотрудниках",command=lambda: otchrab())
+    otchpers = Button(windir,text="Информация о сотрудниках",command=lambda: otchrab())
     otchpers.grid(row=1,column=1)
 def mehokno(fio):
     print("имя механика: ", fio)
-
+    winmeh = Tk()
+    winmeh.geometry('500x300')
+    title = 'Добро пожаловать, ' + fio
+    winmeh.title(title)
+    otchhis = Button(winmeh, text="История работ", command=lambda: filhis())
+    otchhis.grid(row=1, column=1)
 def sklokno(fio):
     print("имя заведующего складом: ", fio)
 
@@ -95,8 +180,8 @@ def avt(log,pas): #проверка лог/пароля
         menedokno(fio)
 
 def vhod(): #интерфейс меню входа
-    out=[]
-    winvhod=Tk()
+    out = []
+    winvhod = Tk()
     winvhod.geometry('300x150')
     winvhod.title("Авторизация")
     verhtext = Label(winvhod, text="Введите логин и пароль: ")
@@ -109,16 +194,16 @@ def vhod(): #интерфейс меню входа
     pas.set("пароль")
     vvodlog = Entry(winvhod, relief=RAISED, width=15, borderwidth=2, textvariable=pas) #ввод пароля
     vvodlog.grid(column=1, row=3)
-    prov=Button(winvhod,text="Войти", command=lambda: out.append(avt(log.get(),pas.get()))) #кнопка входа, вызывает функцию проверки лог/пароль
+    prov = Button(winvhod,text="Войти", command=lambda: out.append(avt(log.get(),pas.get()))) #кнопка входа, вызывает функцию проверки лог/пароль
     prov.grid(column=1, row=4)
     knopkazakr = Button(winvhod, text="закрыть", command=winvhod.quit) #кнопка закрыть
     knopkazakr.grid(column=2, row=4)
     winvhod.mainloop()
-cur=bd.cursor()
+cur = bd.cursor()
 
 cur.execute("SELECT * from rabotniki")
-rows=cur.fetchall()
-vhod()
+rows = cur.fetchall()
+filhis()
 
 
 cur.close()
