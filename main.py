@@ -8,6 +8,24 @@ bd=psycopg2.connect(
     user="postgres",
     password="1223",
 )
+
+
+
+def avt(log,pas):
+    dolz = 0
+    cur = bd.cursor()
+    provlog = "SELECT * from rabotniki where login = %s"
+    cur.execute(provlog, (log, ))
+    rows = cur.fetchall()
+    if rows[0][3] == pas:
+        dolz = rows[0][1]
+    print(dolz)
+
+
+def vhod():
+    out = []
+    winvhod = Tk()
+
 def avt(log,pas): #проверка лог/пароля
     fio=0
     dolz=0
@@ -23,6 +41,7 @@ def avt(log,pas): #проверка лог/пароля
 def vhod(): #интерфейс меню входа
     out=[]
     winvhod=Tk()
+
     winvhod.geometry('300x150')
     winvhod.title("Авторизация")
     verhtext = Label(winvhod, text="Введите логин и пароль: ")
@@ -35,18 +54,19 @@ def vhod(): #интерфейс меню входа
     pas.set("пароль")
     vvodlog = Entry(winvhod, relief=RAISED, width=15, borderwidth=2, textvariable=pas) #ввод пароля
     vvodlog.grid(column=1, row=3)
+
+    prov=Button(winvhod,text="Войти", command=lambda: out.append(avt(log.get(), pas.get())))
+
     prov=Button(winvhod,text="Войти", command=lambda: out.append(avt(log.get(),pas.get()))) #кнопка входа, вызывает функцию проверки лог/пароль
+
     prov.grid(column=1, row=4)
     knopkazakr = Button(winvhod, text="закрыть", command=winvhod.quit) #кнопка закрыть
     knopkazakr.grid(column=2, row=4)
     winvhod.mainloop()
-cur=bd.cursor()
 
+
+cur=bd.cursor()
 cur.execute("SELECT * from rabotniki")
 rows=cur.fetchall()
 vhod()
-
-
-
 bd.close()
-
