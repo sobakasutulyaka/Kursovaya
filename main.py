@@ -10,6 +10,96 @@ bd = psycopg2.connect(
     password="1223",
 )
 
+def hiszapr(filtr,vvod):
+    cur = bd.cursor()
+    if filtr == "название детали":
+        provfiltr = "SELECT * from historyzaprosi where name = %s"
+        cur.execute(provfiltr, (vvod,))
+
+    elif filtr == "совместимостимое авто":
+        provfiltr = "SELECT * from historyzaprosi where sovmest = %s"
+        cur.execute(provfiltr, (vvod,))
+
+    elif filtr == "дата":
+        provfiltr = "SELECT * from historyzaprosi where data = %s"
+        cur.execute(provfiltr, (vvod,))
+
+    elif filtr == "нет":
+        cur.execute("SELECT * from historyzaprosi")
+
+    rows = cur.fetchall()
+    if rows == []:
+        messagebox.showinfo("ошибка", "Записей с этим фильтром не обнаружено")
+
+    else:
+        vis, dl = numpy.shape(rows)
+        ws = Tk()
+        ws.title('История запросов')
+        ws.geometry('1000x500')
+
+        otchet_frame = Frame(ws)
+        otchet_frame.pack()
+
+        my_otchet = ttk.Treeview(otchet_frame)
+
+        my_otchet['columns'] = (
+            'id', 'name', 'price', 'kolvo', 'sovmest', 'data', 'vipoln', 'detid', 'remontid')
+
+        my_otchet.column("#0", width=0, stretch=NO)
+        my_otchet.column("id", anchor=CENTER, width=50)
+        my_otchet.column("name", anchor=CENTER, width=180)
+        my_otchet.column("price", anchor=CENTER, width=120)
+        my_otchet.column("kolvo", anchor=CENTER, width=50)
+        my_otchet.column("sovmest", anchor=CENTER, width=180)
+        my_otchet.column("data", anchor=CENTER, width=180)
+        my_otchet.column("vipoln", anchor=CENTER, width=80)
+        my_otchet.column("detid", anchor=CENTER, width=70)
+        my_otchet.column("remontid", anchor=CENTER, width=70)
+
+        my_otchet.heading("#0", text="", anchor=CENTER)
+        my_otchet.heading("id", text="id", anchor=CENTER)
+        my_otchet.heading("name", text="Название", anchor=CENTER)
+        my_otchet.heading("price", text="Цена", anchor=CENTER)
+        my_otchet.heading("kolvo", text="Кол-во", anchor=CENTER)
+        my_otchet.heading("sovmest", text="Совместимость", anchor=CENTER)
+        my_otchet.heading("data", text="Дата запроса", anchor=CENTER)
+        my_otchet.heading("vipoln", text="Выполнение", anchor=CENTER)
+        my_otchet.heading("detid", text="id детали", anchor=CENTER)
+        my_otchet.heading("remontid", text="id ремонта", anchor=CENTER)
+
+        for i in range(vis):
+            print(i)
+            print(rows[0][0], rows[0][1], rows[0][2])
+            my_otchet.insert(parent='', index='end', text='', values=(
+                rows[i][0], rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6], rows[i][7],
+                rows[i][8]))
+
+        my_otchet.pack()
+
+        Button(ws, text="Закрыть", width=15, height=1, command=lambda: ws.destroy()).pack()
+
+        ws.mainloop()
+
+
+def filtrzapr():
+    windob=Tk()
+    windob.geometry('500x300')
+    windob.title("Выберите фильтр")
+    Label(windob, text="Уточните фильтр").grid(column=2, row=2)
+    vvodfiltr = StringVar()
+    Entry(windob, relief=RAISED, width=25, borderwidth=2, textvariable=vvodfiltr).grid(column=2, row=3)
+
+    vib = ['название детали', 'дата', 'совместимое авто','нет']
+    filtr = ttk.Combobox(windob, values=vib)
+    filtr.set("фильтр")
+    filtr.grid(row=1, column=2)
+
+    otchhiskn = Button(windob, text="Открыть историю запросов",
+                       command=lambda: hiszapr(filtr.get(), vvodfiltr.get()))
+    otchhiskn.grid(row=5, column=2)
+    Button(windob, text="Закрыть", command=lambda: windob.destroy()).grid(column=2,row=7)
+    windob.mainloop()
+
 def invent(filtr, vvod):
     cur = bd.cursor()
     if filtr == "название":
@@ -359,7 +449,7 @@ def vipzapr():
         messagebox.showinfo("ошибка", "Активных запросов не обнаружено")
 
     else:
-        print(rows)
+
         vis, dl = numpy.shape(rows)
         ws = Tk()
         ws.title('Активные запросы')
@@ -571,6 +661,8 @@ def dobrabot2(gosnomer,rabots,utochprich,detal,vrem,remdat,fio):
                                     if a == True:
                                         strok = (gosnomer, rabots, utochprich, detal, vrem, remdat, fio)
                                         cur.execute(f"INSERT INTO historyrem (gosnomer,prichina,detrem, detali,time,daterem, fiomehan) VALUES {strok}")
+                                        provlog2 = "update autopark set rabotaet='нет' where gosnumber =%s"
+                                        cur.execute(provlog2, (gosnomer,))
                                         bd.commit()
                                         messagebox.showinfo("Успех", "Запись успешно добавлена!")
 
@@ -1181,8 +1273,10 @@ def dirokno(fio):
     otchavto.grid(row=1, column=5)
     dobavto = Button(windir, text="Добавить автомобиль", width=25, command=lambda: dobavavto())
     dobavto.grid(row=3, column=5)
-    udalavto = Button(windir, text="Удалить автомобиль", width=25, command=lambda: delavto()).grid(row=5, column=5)
-
+    Button(windir, text="Удалить автомобиль", width=25, command=lambda: delavto()).grid(row=5, column=5)
+    Button(windir, text="Инвентаризация", width=25, command=lambda: filtrinvent()).grid(column=7, row=3)
+    Button(windir, text="Закрыть", command=lambda: windir.destroy()).grid(column=5,row=6)
+    Button(windir, text="Сменить пользователя", command=lambda: vhod()).grid(column=7, row=6)
     windir.mainloop()
 
 def mehokno(fio):
@@ -1198,6 +1292,8 @@ def mehokno(fio):
     Button(winmeh, text="Текущие работы", width=25, command=lambda: provtekrab()).grid(row=5, column=1)
     otchavto = Button(winmeh, text="Автопарк", width=25, command=lambda: filavto())
     otchavto.grid(row=1, column=3)
+    Button(winmeh, text="Закрыть", command=lambda: winmeh.destroy()).grid(column=3, row=7)
+    Button(winmeh, text="Сменить пользователя", command=lambda: vhod()).grid(column=1, row=7)
     winmeh.mainloop()
 
 def sklokno(fio):
@@ -1207,14 +1303,28 @@ def sklokno(fio):
     title = 'Добро пожаловать, ' + fio
     winskl.title(title)
     Button(winskl,text="Проверить запросы", width=25, command=lambda: provzak()).grid(column=1,row=1)
+    Button(winskl, text="История запросов", width=25, command=lambda: filtrzapr()).grid(column=1, row=2)
     Button(winskl, text="История закупок", width=25, command=lambda: filhiszak()).grid(column=2, row=1)
     Button(winskl, text="Закупки", width=25, command=lambda: zakup()).grid(column=2, row=2)
     Button(winskl, text="Встретить доставку", width=25, command=lambda: zavoz()).grid(column=2, row=3)
     Button(winskl, text="Добавить позицию", width=25, command=lambda: dobskl()).grid(column=3, row=1)
     Button(winskl, text="Инвентаризация", width=25, command=lambda: filtrinvent()).grid(column=3, row=2)
+    Button(winskl, text="Закрыть", command=lambda: winskl.destroy()).grid(column=3, row=5)
+    Button(winskl, text="Сменить пользователя", command=lambda: vhod()).grid(column=2, row=5)
     winskl.mainloop()
+
 def menedokno(fio):
     print("имя менеджера автопарка: ", fio)
+    winman=Tk()
+    winman.geometry('600x300')
+    title = 'Добро пожаловать, ' + fio
+    winman.title(title)
+    Button(winman, text="История работ", width=25, command=lambda: filhis()).grid(row=1, column=1)
+    Button(winman, text="Автопарк", width=25, command=lambda: filavto()).grid(row=1, column=3)
+    Button(winman, text="Инвентаризация", width=25, command=lambda: filtrinvent()).grid(column=5, row=1)
+    Button(winman, text="Закрыть", command=lambda: winman.destroy()).grid(column=5, row=3)
+    Button(winman, text="Сменить пользователя", command=lambda: vhod()).grid(column=3, row=3)
+    winman.mainloop()
 
 def avt(log,pas): #проверка лог/пароля
     fio = 0
