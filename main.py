@@ -3,6 +3,9 @@ import psycopg2
 from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from datetime import date
 
 bd = psycopg2.connect(
     database="AvtoRemontBase",
@@ -10,22 +13,199 @@ bd = psycopg2.connect(
     password="1223",
 )
 
+def hisprod():
+    cur = bd.cursor()
+    cur.execute("SELECT * from shop  order by transid")
+    rows = cur.fetchall()
+    if rows == []:
+        messagebox.showinfo("ошибка", "Записей не обнаружено")
+
+    else:
+        vis, dl = numpy.shape(rows)
+        ws = Tk()
+        ws.title('История продаж')
+        ws.geometry('1550x500')
+
+        otchet_frame = Frame(ws)
+        otchet_frame.pack()
+
+        my_otchet = ttk.Treeview(otchet_frame)
+
+        my_otchet['columns'] = (
+            'id','iddet', 'name','proizv', 'kolvo', 'price',  'sovmest', 'dtime', 'data', 'fio', 'vipoln')
+
+        my_otchet.column("#0", width=0, stretch=NO)
+        my_otchet.column("id", anchor=CENTER, width=50)
+        my_otchet.column("iddet", anchor=CENTER, width=50)
+        my_otchet.column("name", anchor=CENTER, width=180)
+        my_otchet.column("proizv", anchor=CENTER, width=180)
+        my_otchet.column("kolvo", anchor=CENTER, width=50)
+        my_otchet.column("price", anchor=CENTER, width=120)
+        my_otchet.column("sovmest", anchor=CENTER, width=180)
+        my_otchet.column("dtime", anchor=CENTER, width=80)
+        my_otchet.column("data", anchor=CENTER, width=180)
+        my_otchet.column("fio", anchor=CENTER, width=180)
+        my_otchet.column("vipoln", anchor=CENTER, width=50)
+
+        my_otchet.heading("#0", text="", anchor=CENTER)
+        my_otchet.heading("id", text="id транз", anchor=CENTER)
+        my_otchet.heading("iddet", text="id дет", anchor=CENTER)
+        my_otchet.heading("name", text="Название", anchor=CENTER)
+        my_otchet.heading("proizv", text="Производитель", anchor=CENTER)
+        my_otchet.heading("kolvo", text="Кол-во", anchor=CENTER)
+        my_otchet.heading("price", text="Цена", anchor=CENTER)
+        my_otchet.heading("sovmest", text="Совместимость", anchor=CENTER)
+        my_otchet.heading("dtime", text="Время доставки", anchor=CENTER)
+        my_otchet.heading("data", text="Дата продажи", anchor=CENTER)
+        my_otchet.heading("fio", text="ФИО продавца", anchor=CENTER)
+        my_otchet.heading("vipoln", text="Выполнение", anchor=CENTER)
+
+
+        for i in range(vis):
+
+            my_otchet.insert(parent='', index='end', text='', values=(
+                rows[i][0], rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6], rows[i][7],
+                rows[i][8], rows[i][9], rows[i][10]))
+
+        my_otchet.pack()
+
+        Button(ws, text="Закрыть", width=15, height=1, command=lambda: ws.destroy()).pack()
+
+        ws.mainloop()
+
+def chek():
+    cur = bd.cursor()
+    cur.execute("SELECT * from shop  order by transid")
+    rows = cur.fetchall()
+    if rows == []:
+        messagebox.showinfo("ошибка", "Записей не обнаружено")
+
+    else:
+        vis, dl = numpy.shape(rows)
+        ws = Tk()
+        ws.title('Кассовый чек')
+        ws.geometry('350x150')
+        vis-=1
+        nomer='Чек №'+str(rows[vis][0])
+        Label(ws, text=nomer).pack()
+        name=str(rows[vis][2])+' (' +str(rows[vis][5]/rows[vis][4]) + ' руб)' +' x '+str(rows[vis][4])
+        Label(ws, text=name).pack()
+        price='Итоговая сумма '+str(rows[vis][5])
+        Label(ws, text=price).pack()
+        niz='дата ' + str(rows[vis][8]) + ', кассир ' + str(rows[vis][9])
+        Label(ws, text=niz).pack()
+        Button(ws, text="Закрыть", width=15, height=1, command=lambda: ws.destroy()).pack()
+
+        ws.mainloop()
+
+
+def dobpok2(nazv, proizv, sovm, fio,kolvo):
+    if len(nazv) != 0:
+        if len(proizv) != 0:
+            if len(sovm) != 0:
+
+                        if kolvo.isdigit() == True:
+
+                                    strok = (nazv, proizv, sovm, fio, kolvo)
+                                    cur.execute(f"INSERT INTO shop (name,proizv,sovmest, fio, kolvo) VALUES {strok}")
+                                    bd.commit()
+                                    messagebox.showinfo("Успех", "Запись успешно добавлена!")
+                                    chek()
+
+                        else:
+                            messagebox.showinfo("ошибка", "Поле 'количество' заполнено некорректно")
+
+
+            else:
+                messagebox.showinfo("ошибка", "Поле 'совместимость' должно быть заполнено")
+        else:
+            messagebox.showinfo("ошибка", "Поле 'производитель' должно быть заполнено")
+    else:
+        messagebox.showinfo("ошибка", "Поле 'название' должно быть заполнено")
+
+def dobpok(fio):
+    windob = Tk()
+    windob.geometry('620x450')
+    windob.title("Добавление новой продажи")
+
+    Label(windob, text="Введите название").grid(column=1, row=1)
+    nazv = StringVar()
+    Entry(windob, relief=RAISED, width=25, borderwidth=2, textvariable=nazv).grid(column=1, row=2)
+
+    Label(windob, text="Введите производителя").grid(row=4, column=1)
+    proizv = StringVar()
+    Entry(windob, relief=RAISED, width=25, borderwidth=2, textvariable=proizv).grid(column=1, row=5)
+
+    Label(windob, text="Выберите совместимое авто").grid(column=3, row=1)
+    cur = bd.cursor()
+    cur.execute("SELECT model from autopark group by model")
+    vib = cur.fetchall()
+    vis, dl = numpy.shape(vib)
+    vib2 = []
+    for i in range(vis):
+        print(vib[i][0])
+        vib2.append(vib[i][0])
+    sovm = ttk.Combobox(windob, values=vib2)
+    sovm.set("модель")
+    sovm.grid(row=2, column=3)
+
+    Label(windob, text="Количество").grid(row=4, column=3)
+    kolvo = StringVar()
+    Entry(windob, relief=RAISED, width=25, borderwidth=2, textvariable=kolvo).grid(column=3, row=5)
+
+    dobav = Button(windob, text="Добавить",
+                   command=lambda: dobpok2(nazv.get(), proizv.get(), sovm.get(), fio, kolvo.get()))
+    dobav.grid(column=3, row=7)
+
+    zakr = Button(windob, text="Закрыть", command=lambda: windob.destroy())
+    zakr.grid(column=5, row=7)
+
+    windob.mainloop()
+
+def diagavto():
+    window = Tk()
+    window.title("Диаграмма расходов")
+    cur=bd.cursor()
+    cur.execute("SELECT model, gosnumber, stoimrem from autopark order by stoimrem")
+    viv=cur.fetchall()
+    vis,dl=numpy.shape(viv)
+    index=[]
+    values=[]
+    for i in range(vis):
+        index.append(viv[i][0]+" "+viv[i][1])
+        values.append(viv[i][2])
+
+    fig = Figure(figsize=(17, 5))
+    a = fig.add_subplot(211)
+    a.barh(index, values,alpha=0.7, color='red')
+
+    a.invert_yaxis()
+
+    a.set_title("Расходы на автопарк", fontsize=12)
+    a.set_xlabel("Расходы, руб", fontsize=10)
+
+    canvas = FigureCanvasTkAgg(fig, master=window)
+    canvas.get_tk_widget().pack()
+    canvas.draw()
+
+    window.mainloop()
+
 def hiszapr(filtr,vvod):
     cur = bd.cursor()
     if filtr == "название детали":
-        provfiltr = "SELECT * from historyzaprosi where name = %s"
+        provfiltr = "SELECT * from historyzaprosi where name = %s order by zaprosid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "совместимостимое авто":
-        provfiltr = "SELECT * from historyzaprosi where sovmest = %s"
+        provfiltr = "SELECT * from historyzaprosi where sovmest = %s order by zaprosid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "дата":
-        provfiltr = "SELECT * from historyzaprosi where data = %s"
+        provfiltr = "SELECT * from historyzaprosi where data = %s order by zaprosid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "нет":
-        cur.execute("SELECT * from historyzaprosi")
+        cur.execute("SELECT * from historyzaprosi  order by zaprosid")
 
     rows = cur.fetchall()
     if rows == []:
@@ -103,22 +283,22 @@ def filtrzapr():
 def invent(filtr, vvod):
     cur = bd.cursor()
     if filtr == "название":
-        provfiltr = "SELECT * from sklad where name = %s"
+        provfiltr = "SELECT * from sklad where name = %s order by sklid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "совместимость":
-        provfiltr = "SELECT * from sklad where sovmest = %s"
+        provfiltr = "SELECT * from sklad where sovmest = %s order by sklid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "производитель":
-        provfiltr = "SELECT * from sklad where proizv = %s"
+        provfiltr = "SELECT * from sklad where proizv = %s order by sklid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "наличие":
-        cur.execute("SELECT * from sklad where kolvo > 0")
+        cur.execute("SELECT * from sklad  where kolvo > 0 order by sklid")
 
     elif filtr == "нет":
-        cur.execute("SELECT * from sklad")
+        cur.execute("SELECT * from sklad order by sklid")
 
     rows = cur.fetchall()
     if rows == []:
@@ -232,9 +412,15 @@ def dobskl():
 
     Label(windob, text="Выберите совместимое авто").grid(column=3, row=1)
     cur = bd.cursor()
-    cur.execute("SELECT model from autopark")
+    cur.execute("SELECT model from autopark group by model")
     vib = cur.fetchall()
-    sovm = ttk.Combobox(windob, values=vib)
+    vis,dl=numpy.shape(vib)
+    vib2=[]
+    for i in range (vis):
+        print(vib[i][0])
+        vib2.append(vib[i][0])
+
+    sovm = ttk.Combobox(windob, values= vib2)
     sovm.set("модель")
     sovm.grid(row=2, column=3)
 
@@ -267,23 +453,23 @@ def dobskl():
 def hiszak(filtr,vvod):
     cur = bd.cursor()
     if filtr == "название детали":
-        provfiltr = "SELECT * from historyzakupok where namedet = %s"
+        provfiltr = "SELECT * from historyzakupok where namedet = %s order by zakupid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "совместимость":
-        provfiltr = "SELECT * from historyzakupok where sovmest = %s"
+        provfiltr = "SELECT * from historyzakupok  where sovmest = %s order by zakupid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "статус":
-        provfiltr = "SELECT * from historyzakupok where zipoln = %s"
+        provfiltr = "SELECT * from historyzakupok where zipoln = %s order by zakupid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "дата":
-        provfiltr = "SELECT * from historyzakupok where zakdata = %s"
+        provfiltr = "SELECT * from historyzakupok where zakdata = %s order by zakupid"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "нет":
-        cur.execute("SELECT * from historyzakupok")
+        cur.execute("SELECT * from historyzakupok order by zakupid")
 
     rows = cur.fetchall()
     if rows == []:
@@ -648,8 +834,8 @@ def dobrabot2(gosnomer,rabots,utochprich,detal,vrem,remdat,fio):
             if len(utochprich) != 0:
 
                         if len(vrem) != 0:
-                            if len(remdat) != 0:
-                                if int(remdat[:4]) <=2021:
+
+
                                     cur = bd.cursor()
                                     cur.execute("SELECT gosnumber FROM autopark")
                                     provlog = cur.fetchall()
@@ -668,10 +854,8 @@ def dobrabot2(gosnomer,rabots,utochprich,detal,vrem,remdat,fio):
 
                                     else:
                                         messagebox.showinfo("Ошибка", "автомобиль не найден")
-                                else:
-                                    messagebox.showinfo("Ошибка", "Вы из будущего?")
-                            else:
-                                messagebox.showinfo("ошибка", "Поле 'дата обслуживания' должно быть заполнено")
+
+
                         else:
                             messagebox.showinfo("ошибка", "Поле 'время обслуживания' должно быть заполнено")
 
@@ -710,12 +894,11 @@ def dobrabot(fio):
     vrem=StringVar()
     Entry(windob,relief=RAISED, width=25, borderwidth=2, textvariable=vrem).grid(column=1,row=5)
 
-    Label(windob, text="Введите дату ремонта (год-месяц-день)").grid(row=7,column=1)
-    remdat=StringVar()
-    Entry(windob,relief=RAISED, width=25, borderwidth=2, textvariable=remdat).grid(column=1,row=8)
+    remdata=date.today()
+    remdat = remdata.strftime('%Y-%m-%d')
 
     dobav = Button(windob, text="Добавить",
-                   command=lambda: dobrabot2(gosnomer.get(),rabots.get(),utochprich.get(),detal.get(),vrem.get(),remdat.get(),fio))
+                   command=lambda: dobrabot2(gosnomer.get(),rabots.get(),utochprich.get(),detal.get(),vrem.get(),remdat,fio))
     dobav.grid(column=3, row=10)
 
     zakr = Button(windob, text="Закрыть", command=lambda: windob.destroy())
@@ -759,7 +942,7 @@ def delavto():
     windel.mainloop()
 
 
-def dobavto2(gosnomer, model, birth, rabots):
+def dobavto2(gosnomer, model, birth, rabots,otv):
     if len(gosnomer) != 0:
         if len(model) != 0:
             if len(rabots) != 0:
@@ -776,7 +959,7 @@ def dobavto2(gosnomer, model, birth, rabots):
 
                                 if a == False:
 
-                                    strok=(gosnomer, model, birth, rabots)
+                                    strok=(gosnomer, model, birth, rabots,otv)
                                     cur.execute(f"INSERT INTO autopark (gosnumber,model,birthyear,rabotaet) VALUES {strok}")
                                     bd.commit()
                                     messagebox.showinfo("Успех", "Запись успешно добавлена!")
@@ -814,17 +997,21 @@ def dobavavto():
     birth = StringVar()
     Entry(dobavtowin, relief=RAISED, width=15, borderwidth=2, textvariable=birth).grid(column=1, row=4)  # ввод года производства
 
+    Label(dobavtowin, text="Введите ответственное лицо:").grid(column=1, row=5)
+    otv = StringVar()
+    Entry(dobavtowin, relief=RAISED, width=15, borderwidth=2, textvariable=otv).grid(column=1, row=6)
+
     Label(dobavtowin, text="Работоспособность").grid(column=3, row=3)
     vib = ["да", "нет"]
     rabots=ttk.Combobox(dobavtowin, values=vib)
     rabots.set("работоспособность")
     rabots.grid(row=4, column=3)
 
-    dobav=Button(dobavtowin, text="Добавить", command=lambda: dobavto2(gosnomer.get(), model.get(), birth.get(), rabots.get()))
-    dobav.grid(column=1, row=5)
+    dobav=Button(dobavtowin, text="Добавить", command=lambda: dobavto2(gosnomer.get(), model.get(), birth.get(), rabots.get(), otv.get()))
+    dobav.grid(column=1, row=7)
 
     zakr=Button(dobavtowin, text="Закрыть", command=lambda: dobavtowin.destroy())
-    zakr.grid(column=3,row=5)
+    zakr.grid(column=3,row=7)
     dobavtowin.mainloop()
 
 def otchavto(filtr,vvod):
@@ -941,14 +1128,14 @@ def otchavto(filtr,vvod):
         vis, dl = numpy.shape(rows)
         ws = Tk()
         ws.title('История обслуживаний ТС')
-        ws.geometry('940x500')
+        ws.geometry('1120x500')
 
         otchet_frame = Frame(ws)
         otchet_frame.pack()
 
         my_otchet = ttk.Treeview(otchet_frame)
 
-        my_otchet['columns'] = ('model', 'gosnomer', 'birth', 'kolvorem', 'stoimrem', 'downtime', 'rab')
+        my_otchet['columns'] = ('model', 'gosnomer', 'birth', 'kolvorem', 'stoimrem', 'downtime', 'rab','otv')
 
         my_otchet.column("#0", width=0, stretch=NO)
         my_otchet.column("model", anchor=CENTER, width=90)
@@ -958,6 +1145,7 @@ def otchavto(filtr,vvod):
         my_otchet.column("stoimrem", anchor=CENTER, width=90)
         my_otchet.column("downtime", anchor=CENTER, width=120)
         my_otchet.column("rab", anchor=CENTER, width=120)
+        my_otchet.column("otv", anchor=CENTER, width=180)
 
         my_otchet.heading("#0", text="", anchor=CENTER)
         my_otchet.heading("model", text="Модель", anchor=CENTER)
@@ -967,10 +1155,11 @@ def otchavto(filtr,vvod):
         my_otchet.heading("stoimrem", text="Стоимость работ", anchor=CENTER)
         my_otchet.heading("downtime", text="Время простоя", anchor=CENTER)
         my_otchet.heading("rab", text="Работоспособность", anchor=CENTER)
+        my_otchet.heading("otv", text="ФИО ответственного", anchor=CENTER)
 
         for i in range(vis):
             my_otchet.insert(parent='', index='end', text='',
-                             values=(rows[i][0], rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6]))
+                             values=(rows[i][0], rows[i][1], rows[i][2], rows[i][3], rows[i][4], rows[i][5], rows[i][6], rows[i][7]))
 
         my_otchet.pack()
 
@@ -1041,7 +1230,7 @@ def dobavrab2(fio, dolz, logiin, pas, phone, addr, birth):
                             provlog=cur.fetchall()
                             a=False
                             for i in range(len(provlog)):
-                                if logiin in str (provlog[i]):
+                                if logiin in str(provlog[i]) and len(logiin)==len(str(provlog[i])):
                                     a=True
 
                             if a == False:
@@ -1079,7 +1268,7 @@ def dobavrab():
 
     text12 = Label(dobrabwin, text="Введите должность:")
     text12.grid(column=3, row=1)
-    vib = ["директор", "механик", "заведующий складом", "менеджер автопарка"]
+    vib = ["директор", "механик", "заведующий складом", "инспектор автопарка"]
     dolz = ttk.Combobox(dobrabwin, values=vib)
     dolz.set("должность")
     dolz.grid(row=2, column=3)
@@ -1125,27 +1314,27 @@ def dobavrab():
 def otchhis(filtr,vvod):
     cur = bd.cursor()
     if filtr == "госномер тс":
-        provfiltr = "SELECT * from historyrem where gosnomer = %s"
+        provfiltr = "SELECT * AS remintid from historyrem where gosnomer = %s"
         cur.execute(provfiltr, (vvod, ))
 
     elif filtr == "модель":
-        provfiltr = "SELECT * from historyrem where model = %s"
+        provfiltr = "SELECT * from historyrem order by remontid where model = %s"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "причина":
-        provfiltr = "SELECT * from historyrem where prichina = %s"
+        provfiltr = "SELECT * from historyrem order by remontid where prichina = %s"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "дата":
-        provfiltr = "SELECT * from historyrem where daterem = %s"
+        provfiltr = "SELECT * from historyrem order by remontid where daterem = %s"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "ФИО механика":
-        provfiltr = "SELECT * from historyrem where fiomehan = %s"
+        provfiltr = "SELECT * from historyrem order by remontid where fiomehan = %s"
         cur.execute(provfiltr, (vvod,))
 
     elif filtr == "нет":
-        cur.execute("SELECT * from historyrem")
+        cur.execute("SELECT * from historyrem order by remontid")
 
     rows = cur.fetchall()
     if rows == []:
@@ -1267,6 +1456,7 @@ def dirokno(fio):
     dobpers.grid(row=3, column=1)
     udalrab = Button(windir, text="Удалить сотрудника", width=25, command=lambda: delrab())
     udalrab.grid(row=5, column=1)
+    Button(windir, text="История продаж", width=25, command=lambda: hisprod()).grid(row=6, column=1)
     otchhis = Button(windir, text="История работ", width=25, command=lambda: filhis())
     otchhis.grid(row=1, column=7)
     otchavto = Button(windir, text="Автопарк", width=25, command=lambda: filavto())
@@ -1275,6 +1465,7 @@ def dirokno(fio):
     dobavto.grid(row=3, column=5)
     Button(windir, text="Удалить автомобиль", width=25, command=lambda: delavto()).grid(row=5, column=5)
     Button(windir, text="Инвентаризация", width=25, command=lambda: filtrinvent()).grid(column=7, row=3)
+    Button(windir, text="Отчёт о расходах", width=25, command=lambda: diagavto()).grid(column=7, row=5)
     Button(windir, text="Закрыть", command=lambda: windir.destroy()).grid(column=5,row=6)
     Button(windir, text="Сменить пользователя", command=lambda: vhod()).grid(column=7, row=6)
     windir.mainloop()
@@ -1304,6 +1495,7 @@ def sklokno(fio):
     winskl.title(title)
     Button(winskl,text="Проверить запросы", width=25, command=lambda: provzak()).grid(column=1,row=1)
     Button(winskl, text="История запросов", width=25, command=lambda: filtrzapr()).grid(column=1, row=2)
+    Button(winskl, text="Добавить продажу", width=25, command=lambda: dobpok(fio)).grid(column=1, row=3)
     Button(winskl, text="История закупок", width=25, command=lambda: filhiszak()).grid(column=2, row=1)
     Button(winskl, text="Закупки", width=25, command=lambda: zakup()).grid(column=2, row=2)
     Button(winskl, text="Встретить доставку", width=25, command=lambda: zavoz()).grid(column=2, row=3)
@@ -1314,7 +1506,7 @@ def sklokno(fio):
     winskl.mainloop()
 
 def menedokno(fio):
-    print("имя менеджера автопарка: ", fio)
+    print("имя инспектора автопарка: ", fio)
     winman=Tk()
     winman.geometry('600x300')
     title = 'Добро пожаловать, ' + fio
@@ -1322,6 +1514,8 @@ def menedokno(fio):
     Button(winman, text="История работ", width=25, command=lambda: filhis()).grid(row=1, column=1)
     Button(winman, text="Автопарк", width=25, command=lambda: filavto()).grid(row=1, column=3)
     Button(winman, text="Инвентаризация", width=25, command=lambda: filtrinvent()).grid(column=5, row=1)
+    Button(winman, text="Иcтория запросов", width=25, command=lambda: filtrzapr()).grid(column=1, row=3)
+    Button(winman, text="Отчёт о расходах", width=25, command=lambda: diagavto()).grid(column=1, row=5)
     Button(winman, text="Закрыть", command=lambda: winman.destroy()).grid(column=5, row=3)
     Button(winman, text="Сменить пользователя", command=lambda: vhod()).grid(column=3, row=3)
     winman.mainloop()
@@ -1348,7 +1542,7 @@ def avt(log,pas): #проверка лог/пароля
         mehokno(fio)
     elif dolz == 'заведующий складом':
         sklokno(fio)
-    elif dolz == 'менеджер автопарка':
+    elif dolz == 'инспектор автопарка':
         menedokno(fio)
 
 def vhod(): #интерфейс меню входа
@@ -1373,9 +1567,6 @@ def vhod(): #интерфейс меню входа
     winvhod.mainloop()
 
 cur = bd.cursor()
-
-cur.execute("SELECT * from rabotniki")
-rows = cur.fetchall()
 
 vhod()
 
